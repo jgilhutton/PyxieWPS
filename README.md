@@ -18,7 +18,8 @@ It enumerates all the APs with active WPS, tries to get the PKE, PKR, E-NONCE, R
 Please report any bugs to pyxiewps@gmail.com
 
 # USAGE
-  
+  	python pyxiewps-[LANGUAGE].py <arguments>
+  	
 	-r --use-reaver          Use reaver to get all the AP information.              [False]
 	-p --use-pixie           Once all the data is captured with reaver              [False]
 	                         the script tries to get the WPS pin with pixiewps.
@@ -39,5 +40,5 @@ Please report any bugs to pyxiewps@gmail.com
 	                         
 #USAGE EXAMPLE
 
-  python pyxiewps-ingles.py -r -p -w 15 -t 6 -c 7 -P -o file.txt -f
-  python pyxiewps-ingles.py --use-reaver --use-pixie --wash-time 15 --time 6 --channel 7 --prompt --output file.txt -h
+	python pyxiewps-ingles.py -r -p -w 15 -t 6 -c 7 -P -o file.txt -f
+	python pyxiewps-ingles.py --use-reaver --use-pixie --wash-time 15 --time 6 --channel 7 --prompt --output file.txt -h
