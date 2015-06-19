@@ -1,6 +1,6 @@
 # pyxiewps overview
 
-Pyxiewps is a wireless attack tool writen in python that uses reaver, pixiewps, macchanger and aircrack to retrieve the WPS pin of any vulnerable AP in seconds.
+Pyxiewps is a wireless attack tool written in python that uses reaver, pixiewps, macchanger and aircrack to retrieve the WPS pin of any vulnerable AP in seconds.
 It's a wrapper.
 It is meant for educational purposes only. All credits for the research go to Dominique Bongard.
 
@@ -22,12 +22,12 @@ Demonstration: https://www.youtube.com/watch?v=1MOhqeYr3yU
 
 # What's the Aircrack thing?
 
-You can find two versions for each language. One of them uses Aircrack to set the interface into monitor mode and the other one doesn't. Just in case you wonder why, here is the explanation: Last version of aircrack works badly when it sets the monitor mode in some distros. The most frequent error is the SIOCSIFFLAGS one. This error does not prevent Airmon to create the monitor interface so the script continues and it's not aware of this problem. That's why the only output that some users get is "No WPS-active APs were found." in less than 2 seconds because wash crashes at enumerating the APs.
+You can find two versions for each language. One of them uses Aircrack to set the interface into monitor mode and the other one doesn't. Just in case you wonder why, here is the explanation: Last version of aircrack works badly when it sets the monitor mode in some distros. The most frequent error is the SIOCSIFFLAGS one. This error does not stop Airmon to create the monitor interface so the script continues and it's not aware of this problem. That's why the only output that some users get is "No WPS-active APs were found." in less than 2 seconds because wash crashes at enumerating the APs and it's all in a whole try-except block of Python.
 The solution was to modify the script to use these commands instead of Airmon:
 	
 	$ ifconfig <interface> down
 	$ iwconfig <interface> mode monitor
-	$ ifconfig <interface> up
+	$ ifconfig <interface> up  # see "third party bugs"
 
 # USAGE
   	python pyxiewps-[LANGUAGE].py <arguments>
@@ -61,6 +61,10 @@ The solution was to modify the script to use these commands instead of Airmon:
 
 	python pyxiewps-[LANGUAGE].py -r -p -w 15 -t 6 -c 7 -F -O -o file.txt -f
 	
+[+] Only enumerates the WPS acive APs:
+
+	python pyxiewps-[LANGUAGE].py
+
 # Third party bugs 
 
 [+] BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
@@ -68,7 +72,7 @@ The solution was to modify the script to use these commands instead of Airmon:
 	$ ifconfig <interface> up
 	
 the system crashes leaving the user no other option that bruteforcing a shutdown.
-Check yout wireless card and then it's module before running this script.
+Check your wireless card and then it's module before running this script.
 
 [+] Aircrack sometimes fails to set the interface into monitor mode.
 See https://github.com/jgilhutton/pyxiewps#whats-the-aircrack-thing
