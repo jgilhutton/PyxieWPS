@@ -729,12 +729,12 @@ class Attack():
     elif data == 'more time please':
       print
       print ALERTA + "The program retrieved some information from the AP but"
-      print "    not all of it. Set a greater tiem to fetch the information"
+      print "    not all of it. Set a greater time to fetch the information"
       print "    with the -t argument. 6 seconds by default"
       print
     elif data == 'ap rate limited':
       print
-      print ALERTA + "The AP doesn\'y like you!"
+      print ALERTA + "The AP doesn\'t like you!"
       print "    That\'s why reaver couldn\'t retrieve any information"
       print
       if MACCHANGER and FOREVER:
