@@ -22,6 +22,7 @@ Please report any bugs to pyxiewps@gmail.com
 
 You can find two versions for each language. One of them uses Aircrack to set the interface into monitor mode and the other one doesn't. Just in case you wonder why, here is the explanation: Last version of aircrack works badly when it sets the monitor mode in some distros. The most frequent error is the SIOCSIFFLAGS one. This error does not prevent Airmon to create the monitor interface so the script continues and it's not aware of this problem. That's why the only output that some users get is "No WPS-active APs were found." in less than 2 seconds because wash crashes at enumerating the APs.
 The solution was to modify the script to use these commands instead of Airmon:
+	
 	$ ifconfig <interface> down
 	$ iwconfig <interface> mode monitor
 	$ ifconfig <interface> up
@@ -55,6 +56,8 @@ The solution was to modify the script to use these commands instead of Airmon:
 # Non related bugs
 
 BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
+	
 	$ ifconfig <interface> up
+	
 the system crashes leaving the user no other option that bruteforcing a shutdown.
 Check yout wireless card and then it's module before running this script.
