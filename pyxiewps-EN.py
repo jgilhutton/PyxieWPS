@@ -699,7 +699,7 @@ class Attack():
     """
 
     print INFO + "Fetching information from %s using reaver..." %essid
-    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',bssid,'-vv','-L','-c',canal], timeout = REAVER_TIME)
+    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',bssid,'-vvv','-L','-c',canal], timeout = REAVER_TIME)
     data = engine.parse_reaver(output)
     if data == 'noutput':
       print
@@ -821,7 +821,7 @@ class Attack():
     Once the WPS pin was found, ries to get the password.
     """
     
-    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',BSSID,'-vv','-c',canal,'-p',pin,'-L'], timeout = (REAVER_TIME+4))
+    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',BSSID,'-c',canal,'-p',pin,'-L'], timeout = (REAVER_TIME+4))
     password = engine.parse_reaver(output, pin_encontrado = True)
     if password == 'no password':
       print
