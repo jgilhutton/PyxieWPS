@@ -404,10 +404,16 @@ class Engine():
     
     print INFO + "Cambiando direccion MAC del dispositivo..."
     system('ifconfig %s down' %c.IFACE_MON)
+    system('iwconfig %s mode Managed' %c.IFACE_MON)
+    system('ifconfig %s up' %c.IFACE_MON)
+    system('ifconfig %s down' %c.IFACE_MON)
     mac = subprocess.check_output(['macchanger','-r',c.IFACE_MON])
     mac = mac.split('\n')[2]
     mac = sub('New       MAC\: ','',mac.strip())
     mac = sub(' \(unknown\)','',mac)
+    system('ifconfig %s up' %c.IFACE_MON)
+    system('ifconfig %s down' %c.IFACE_MON)
+    system('iwconfig %s mode monitor' %c.IFACE_MON)
     system('ifconfig %s up' %c.IFACE_MON)
     print INFO + "Se cambio la MAC a una nueva: %s%s" %(INPUT,mac.upper())
     
