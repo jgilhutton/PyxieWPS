@@ -795,7 +795,7 @@ class Attack():
 	    break
 	  else:
 	    pass
-      except:             #Pixiewps error handling
+      except:            #Pixiewps error handling
 	pass
       if pin != '': break
     if pin != '' and len(pin) == 8:
