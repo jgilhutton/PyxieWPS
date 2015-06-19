@@ -498,7 +498,7 @@ class Config():
 	print INPUT + "Choose the W.Interface: "
 	for i in ifaces:
 	  print str(ifaces.index(i)) + " >> " + i
-	while True:    #Control the input! you bugseeker!
+	while True:    # Control the input! you bugseeker!
 	  try:
 	    choice = int(raw_input(INPUT))
 	    self.IFACE = ifaces[choice]
