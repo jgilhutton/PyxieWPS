@@ -48,11 +48,17 @@ The solution was to modify the script to use these commands instead of Airmon:
 	-O --override            Doesn't prompt the user if the WPS pin of the current AP has already
 	                         been found. DOESN'T SKIP THE AP, the script attacks it again.
 	                         
-#USAGE EXAMPLE
+#USAGE EXAMPLES
+
+[+] Enumerate the WPS active APs, fetch the AP information with Reaver, use Pixiewps to get the WPS pin, gives wash 15 seconds to search for APs, gives Reaver 6 seconds to fetch the information, uses channel 7, prompt with APs you want to attack, outputs data into a file and tries to get the password runnung Reaver with the found pin.
 
 	python pyxiewps-ingles.py -r -p -w 15 -t 6 -c 7 -P -o file.txt -f
-	python pyxiewps-ingles.py --use-reaver --use-pixie --wash-time 15 --time 6 --channel 7 --prompt --output file.txt -h
+	python pyxiewps-ingles.py --use-reaver --use-pixie --wash-time 15 --time 6 --channel 7 --prompt --output file.txt --pass
 
+[+] Same as above but it doesn't prompt for the target, runs in a while loop and override already cracked passwords. This is useful when you try to attack a hole zone as you run the script only once.
+
+	python pyxiewps-ingles.py -r -p -w 15 -t 6 -c 7 -F -O -o file.txt -f
+	
 # Non related bugs
 
 BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
