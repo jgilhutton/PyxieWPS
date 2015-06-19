@@ -63,9 +63,12 @@ The solution was to modify the script to use these commands instead of Airmon:
 	
 # Third party bugs 
 
-BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
+[+] BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
 	
 	$ ifconfig <interface> up
 	
 the system crashes leaving the user no other option that bruteforcing a shutdown.
 Check yout wireless card and then it's module before running this script.
+
+[+] Aircrack sometimes fails to set the interface into monitor mode.
+See https://github.com/jgilhutton/pyxiewps#whats-the-aircrack-thing
