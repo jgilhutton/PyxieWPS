@@ -8,7 +8,15 @@ It uses:
   Pixiewps: by wiire <wi7ire@gmail.com>
   Aircrack: http://www.aircrack-ng.org
   Macchanger: by Alvaro Lopez Ortega
-  
+
+# What's the Aircrack thing?
+
+You can find two versions for each language. One of them uses Aircrack to set the interface into monitor mode and the other one doesn't. Just in case you wonder why, here is the explanation: Last version of aircrack works badly when it sets the monitor mode in some distros. The most frequent error is the SIOCSIFFLAGS one. This error does not prevent Airmon to create the monitor interface so the script continues and it's not aware of this problem. That's why the only output that some users get is "No WPS-active APs were found." in less than 2 seconds because wash crashes at enumerating the APs.
+The solution was to modify the script to use these commands instead of Airmon:
+	$ ifconfig <interface> down
+	$ iwconfig <interface> mode monitor
+	$ ifconfig <interface> up
+
 There are already a bunch of tools, reaver included, that can attack an access point (AP) using the Pixie Dust vulnerability but I wanted to do something automatic, fast and user friendly, so here we are.
 
 I also wrote this program to be used on the fly as I walk in the city. If the router is vulnerable, this script uses reaver and pixiewps to retrieve the AP password in, at least, 11 seconds. YUP! You get the WPA password of any vulnerable AP in 11 seconds using the fastest configuration.
@@ -42,3 +50,5 @@ Please report any bugs to pyxiewps@gmail.com
 
 	python pyxiewps-ingles.py -r -p -w 15 -t 6 -c 7 -P -o file.txt -f
 	python pyxiewps-ingles.py --use-reaver --use-pixie --wash-time 15 --time 6 --channel 7 --prompt --output file.txt -h
+
+# Non related bugs
