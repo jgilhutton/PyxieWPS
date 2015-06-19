@@ -60,7 +60,7 @@ The solution was to modify the script to use these commands instead of Airmon:
 
 	python pyxiewps-[LANGUAGE].py -r -p -w 15 -t 6 -c 7 -F -O -o file.txt -f
 	
-# Non related bugs 
+# Third party bugs 
 
 BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
 	
