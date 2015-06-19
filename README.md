@@ -16,7 +16,8 @@ I also wrote this program to be used on the fly as I walk in the city. If the ro
 
 It enumerates all the APs with active WPS, tries to get the PKE, PKR, E-NONCE, R-NONCE, AUTHKEY, HASH1 and 2 using the patched version of reaver, then passes all that information to pixiewps program so that it can retrieve the WPS pin, and finally runs reaver again with the pin that pixiewps found to get the AP WPA password.
 
-Please report any bugs to pyxiewps@gmail.com
+Please report any bugs to pyxiewps@gmail.com ||
+Twitter: https://twitter.com/jgilhutton ||
 Demonstration: https://www.youtube.com/watch?v=1MOhqeYr3yU
 
 # What's the Aircrack thing?
