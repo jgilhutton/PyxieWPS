@@ -40,7 +40,7 @@ def banner():
   """
   Prints the banner into the screen
   """
-  
+
   print
   print "\t ____             _                         "
   print "\t|  _ \ _   ___  _(_) _____      ___ __  ___ "
