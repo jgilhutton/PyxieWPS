@@ -81,22 +81,26 @@ Demonstration: https://www.youtube.com/watch?v=1MOhqeYr3yU
 
 [+] Enumerate the WPS active APs, fetch the AP information with Reaver, use Pixiewps to get the WPS pin, gives Reaver 6 seconds to fetch the information, uses channel 7, prompt which AP you want to attack, outputs data into a file and tries to get the password running Reaver with the found pin.
 
-        pyxiewps -p -t 6 -c 7 -P -o file.txt -f
-        pyxiewps --use-pixie --time 6 --channel 7 --prompt --output file.txt --pass
+        python pyxiewps-[LANGUAGE].py -p -t 6 -c 7 -P -o file.txt -f
+        python pyxiewps-[LANGUAGE].py --use-pixie --time 6 --channel 7 --prompt --output file.txt --pass
 
 [+] Same as above but it doesn't prompt for the target, runs in a while loop and override already cracked passwords. This is useful when you try to attack a hole zone as you run the script only once.
 
-	python pyxiewps-[LANGUAGE].py -p -t 6 -c 7 -F -A -o file.txt -f
+        python pyxiewps-[LANGUAGE].py -p -t 6 -c 7 -F -A -o file.txt -f
 
 [+] Use DRIVE mode.
 
         pyxiewps -m DRIVE
 
+# Known problems
+
+[+] If the program is running in a small console, Pyxiewps will fail at parsing the Airodump's data due it's output format or sometimes some ESSID names will show truncated. To avoid this problem maximize the window.
+
 # Third party bugs 
 
 [+] BE AWARE that some wireless devices are managed by the bcm4313 module. When Pyxiewps tries to bring the iterface up with:
 	
-	$ ifconfig <interface> up
+        $ ifconfig <interface> up
 	
 the system crashes leaving the user no other option that bruteforcing a shutdown.
 Check your wireless card and then it's module before running this script.
