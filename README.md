@@ -7,7 +7,7 @@ It is meant for educational purposes only. All credits for the research go to Do
 It uses:
   Reaver: Reaver 1.5.2 mod by t6_x & DataHead & Soxrok2212 & Wiire & kib0rg
   Pixiewps: by wiire <wi7ire@gmail.com>
-  Aircrack: http://www.aircrack-ng.org
+  **Last version** of Aircrack: http://www.aircrack-ng.org
 
 There are already a bunch of tools, reaver included, that can attack an access point (AP) using the Pixie Dust vulnerability but I wanted to do something automatic, fast and user friendly, so here we are.
 
@@ -17,7 +17,7 @@ It enumerates all the APs with active WPS, tries to get the PKE, PKR, E-NONCE, R
 
 Please report any bugs to pyxiewps@gmail.com ||
 Twitter: https://twitter.com/jgilhutton ||
-Demonstration: https://www.youtube.com/watch?v=1MOhqeYr3yU
+Demonstration: https://www.youtube.com/watch?v=AuNO_O_RkcE
 
 # USAGE
   	python pyxiewps-[LANGUAGE].py <arguments>
