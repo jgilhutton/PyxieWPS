@@ -7,6 +7,7 @@ import subprocess
 from re import sub, compile, search
 from sys import argv
 import datetime
+import urllib
 
 REAVER = 'reaver'
 PIXIEWPS = 'pixiewps'
@@ -471,6 +472,16 @@ class Engine():
       else:
 	exit()
     
+    version = subprocess.Popen('airodump-ng --help | grep wps', shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    version1 = version.communicate()[0]
+    if '--wps' not in version1:
+      print
+      print ALERTA + "La version de Aircrack es incorrecta."
+      print "    Por favor actualice los repositorios e instale"
+      print "    la ultima version de Aircrack."
+      print
+      self.exit_limpio()
+      
     ###Todo en orden...
     engine.start()
 
@@ -581,6 +592,19 @@ class Config():
     uid = subprocess.check_output(['id','-u']).strip()
     return uid
   
+  
+  def internet_on(self):
+    """
+    Revisa la conexion
+    """
+    
+    try:
+      stri = "https://duckduckgo.com" # Chequea si hay conexion con duckduckgo
+      data = urllib.urlopen(stri)
+      return True
+    except:
+      return False
+      
   def check_iface(self):
     """
     Se fija si hay alguna interfaz en modo monitor
@@ -687,6 +711,13 @@ class Config():
     Instala reaver, pixiewps y otras dependencias
     """
     
+    if not self.internet_on():
+      print
+      print ALERTA + "No esta conectado a internet"
+      print "    Conectese a una red para poder instalar"
+      print "    los programas necesarios."
+      print
+      engine.exit_limpio()
     git = 'apt-get -y install git'
     reaver_dep = 'apt-get -y install build-essential libpcap-dev sqlite3 libsqlite3-dev aircrack-ng'
     pixie_dep = 'sudo apt-get -y install libssl-dev'
