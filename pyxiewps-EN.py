@@ -268,14 +268,12 @@ class Engine():
       elif choice in CHOICES_NOPE:
 	c.set_iface("DOWN")
 	c.set_iface("UP")
-    if FOREVER:
-      while True:
-	attack = Attack()
-	attack.get_wps_aps()
-    else:
+    print INFO + "Starting the attack..."
+    while True:
       attack = Attack()
       attack.get_wps_aps()
-      engine.exit_clean()
+      if not FOREVER:
+	engine.exit_clean()
 
   def parse_reaver(self, output, pin_found = False):
     """
