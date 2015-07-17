@@ -94,9 +94,9 @@ Demonstration: https://www.youtube.com/watch?v=AuNO_O_RkcE
 
 # Known problems
 
-[+] If the program is running in a small console, Pyxiewps will fail at parsing the Airodump's data due it's output format or sometimes some ESSID names will show truncated. To avoid this problem maximize the window.
+[+] ///WILL WARN/// If the program is running in a small console, Pyxiewps will fail at parsing the Airodump's data due it's output format or sometimes some ESSID names will show truncated. To avoid this problem maximize the window.
 
-[+] When the program finishes and is done cleaning the interface stuff, you probably won't have the prompt in the console anymore. That's because Airodump doesn't have a good relationship with Python (It's a good way to say I don't have a #@$ing idea of what the @#$! is going on) So if you end up having no prompt on the console once the script exits, you have to re-run pyxiewps and kill it with CTRL-C when it's looking or APs, by doing that, you kill the Airodump process, terminate the Python program aaaaaaand... you have your prompt back. This way of resquing the prompt back is telling me that Python has issues terminating the ADump process and, if someone could give me some pro-tip on it, I would be fully grateful.
+[+] ///FIXED/// When the program finishes and is done cleaning the interface stuff, you probably won't have the prompt in the console anymore. That's because Airodump doesn't have a good relationship with Python (It's a good way to say I don't have a #@$ing idea of what the @#$! is going on) So if you end up having no prompt on the console once the script exits, you have to re-run pyxiewps and kill it with CTRL-C when it's looking or APs, by doing that, you kill the Airodump process, terminate the Python program aaaaaaand... you have your prompt back. This way of resquing the prompt back is telling me that Python has issues terminating the ADump process and, if someone could give me some pro-tip on it, I would be fully grateful.
 
 # Third party bugs 
 
