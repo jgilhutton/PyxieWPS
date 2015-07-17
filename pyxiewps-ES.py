@@ -515,6 +515,7 @@ class Engine():
 	  alarm(0)
     except Alarm:         # El tiempo acaba y se produce una alarma
       pids = [proc.pid]   # Se matan los procesos relacionados con proc.
+      if airodump: system('pkill airodump')
       if kill_tree:
 	pids.extend(self.get_process_children(proc.pid))
       for pid in pids:   # Es posible que el proceso haya muerto antes de esto
