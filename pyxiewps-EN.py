@@ -156,7 +156,7 @@ def arg_parser():
       try:
 	m = argv[argv.index(arg)+1]
 	if m not in flags:
-	  if file not in binary_flags: OUTPUT_FILE = file
+	  if m not in binary_flags: OUTPUT_FILE = m
       except IndexError:
 	pass
     elif arg == '-f' or arg == '--pass':
