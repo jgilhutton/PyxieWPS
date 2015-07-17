@@ -507,6 +507,7 @@ class Engine():
 	  alarm(0)
     except Alarm:         # time's out! alarm is raised
       pids = [proc.pid]   # kill the process tree related with the main process.
+      if airodump: system('pkill airodump')
       if kill_tree:
 	pids.extend(self.get_process_children(proc.pid))
       for pid in pids:
