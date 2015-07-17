@@ -671,7 +671,7 @@ class Config():
       system('iwconfig %s mode Managed' %(self.IFACE_MON)) 
       system('ifconfig %s up' %(self.IFACE_MON))
       self.IS_MON = False
-      print INFO + 'Listo'
+      print INFO + 'Done'
     else:
       print INFO + 'Enabling monitor mode on %s...' %(self.get_iface())
       system('ifconfig %s down' %(self.IFACE))
