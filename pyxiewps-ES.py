@@ -380,7 +380,7 @@ class Engine():
 	try:
 	  wps = snowden[0:snowden.index('  ')].strip()
 	  essid = snowden[(snowden.index('  ')+2):].lstrip()
-	except IndexError: # Por el '  '
+	except (IndexError, ValueError): # Por el '  '
 	  continue
 	canal = i[inds[0]:inds[0]+2].lstrip()
 	bssid = i[0:17]
