@@ -380,9 +380,14 @@ class Engine():
 	channel = i[inds[0]:inds[0]+2].lstrip()
 	bssid = i[0:17]
 	rssi = i[19:22]
-	if bssid not in blacklist and wps != '' and '0.0' not in wps and int(i[1]) >= RSSI:
-	  a = '%s|%s|%s|%s|%s|%s' %(bssid,channel.zfill(2),rssi,wps,wps,essid)
-	  plist.append(a)
+	try:
+	  if bssid not in blacklist and wps != '' and '0.0' not in wps and int(rssi) >= RSSI:
+	    a = '%s|%s|%s|%s|%s|%s' %(bssid,channel.zfill(2),rssi,wps,wps,essid)
+	    plist.append(a)
+	except ValueError:
+	  print ALERT + "There was a parsing error in parse_airodump function."
+	except:
+	  return plist
       elif "][ Elapsed:" in i:
 	break
     plist.sort(key=lambda x: int(x[21:24]), reverse = True) # Sorts the list by RSSI
