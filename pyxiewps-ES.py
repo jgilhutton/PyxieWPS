@@ -386,9 +386,11 @@ class Engine():
 	bssid = i[0:17]
 	rssi = i[19:22]
 	try:
-	  if bssid not in blacklist and wps != '' and '0.0' not in wps and int(i[1]) >= RSSI:
+	  if bssid not in blacklist and wps != '' and '0.0' not in wps and int(rssi) >= RSSI:
 	    a = '%s|%s|%s|%s|%s|%s' %(bssid,canal.zfill(2),rssi,wps,wps,essid)
 	    plist.append(a)
+	except ValueError:
+	  print ALERTA + "Hubo un error en la funcion parse_airodump."
 	except:
 	  return plist
       elif "][ Elapsed:" in i:
