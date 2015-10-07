@@ -449,6 +449,7 @@ class Engine():
     if self.REAVER and self.AIRMON and self.PIXIEWPS and check_again:
       print INFO + "Todos los programas se instalaron correctamente."
       raw_input("%sPresione enter para continuar" %INPUT)
+      print
       print INFO + "Empezando el ataque..."
     elif check_again:
       print
@@ -476,11 +477,15 @@ class Engine():
     version1 = version.communicate()[0]
     if '--wps' not in version1:
       print
-      print ALERTA + "La version de Aircrack es incorrecta."
-      print "    Por favor actualice los repositorios e instale"
-      print "    la ultima version de Aircrack."
+      print ALERTA + "La version de Aircrack en sus repositorios es incorrecta."
+      print "    Quiere descargar el codigo fuente y compilarlo?"
+      print "    El programa va a intentar compilarlo pero puede tomar algunos minutos."
       print
-      self.exit_limpio()
+      choice = raw_input(INPUT+"[S/n] ")
+      if choice in CHOICES_YES:
+        c.get_binarios(compileAircrack = True)
+      else:
+        self.exit_limpio()
       
     ###Todo en orden...
     engine.start()
@@ -707,7 +712,7 @@ class Config():
       f.writelines(data)
     print INFO + "Se guardo la informacion en el archivo %s" %OUTPUT_FILE
     
-  def get_binarios(self):
+  def get_binarios(self, compileAircrack = False):
     """
     Instala reaver, pixiewps y otras dependencias
     """
@@ -719,6 +724,25 @@ class Config():
       print "    los programas necesarios."
       print
       engine.exit_limpio()
+      
+    if compileAircrack:
+      system('mkdir pyxietmp')
+      chdir('pyxietmp')
+      print INFO + "Descargando codigo fuente..."
+      system('wget http://download.aircrack-ng.org/aircrack-ng-1.2-rc2.tar.gz')                               # Get source code
+      print INFO + "Descomprimiendo..."
+      system('tar -xf aircrack-ng-1.2-rc2.tar.gz')                                                            # Decompress
+      chdir('aircrack-ng-1.2-rc2')
+      print INFO + "Instalando dependencias..."
+      system('apt-get -y install pkg-config libnl-3-dev libnl-genl-3-dev')                                    # Dependencies
+      print INFO + "Compilando..."
+      system('make && make strip && make install')                                                            # Compile
+      print INFO + "Limpiando archivos..."
+      chdir('../../')
+      system('rm -r pyxietmp')                                            # Clean
+      print INFO + "Listo!"
+      engine.check(check_again = True) 
+      
     git = 'apt-get -y install git'
     reaver_dep = 'apt-get -y install build-essential libpcap-dev sqlite3 libsqlite3-dev aircrack-ng'
     pixie_dep = 'sudo apt-get -y install libssl-dev'
