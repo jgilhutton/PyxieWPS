@@ -50,7 +50,7 @@ def banner():
   print "\t|_|    \__, /_/\_\_|\___| \_/\_/ | .__/|___\\"
   print "\t       |___/                     |_|        "
   print
-  print "\tPyxiewps v1.1 by jgilhutton <pyxiewps@gmail.com>"
+  print "\tPyxiewps v1.2 by jgilhutton <pyxiewps@gmail.com>"
   print "\tReaver 1.5.2 mod by t6_x <t6_x@hotmail.com> & DataHead & Soxrok2212 & Wiire & kib0rg"
   print "\t Copyright (c) 2011, Tactical Network Solutions, Craig Heffner <cheffner@tacnetsol.com>"
   print "\tPixiewps  Copyright (c) 2015, wiire <wi7ire@gmail.com>"
