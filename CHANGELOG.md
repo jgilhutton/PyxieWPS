@@ -24,4 +24,11 @@ CHANGELOG
 
 If you need any help don't forget to run the program with '-h' flag.
 
+**Version 1.2:**
+
+- The Aircrack version on the repos is not the one this script needs. Si the installer was modified to download de source code from the
+  official webpage and compile it. That means that the installer works like a charm now.
+- A "swearing version" was included in the repository. Code has to be fun! I laugh, you laugh; win-win... I think.
+- Corrected minor typos and format things.
+
 jgilhutton
