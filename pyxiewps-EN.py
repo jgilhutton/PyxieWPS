@@ -357,6 +357,7 @@ class Engine():
   def parse_airodump(self, input):
     """
     Parses the airodump output
+    If you find some error in the program flow, check this function first.
     returns ESSIDs, WPSstatus, channel, bssid and RSSI
     """
 
@@ -444,6 +445,7 @@ class Engine():
     if self.REAVER and self.AIRMON and self.PIXIEWPS and check_again:
       print INFO + "All programs were installed!"
       raw_input("%sPress enter to continue" %INPUT)
+      print
       print INFO + "Starting the attack..."
     elif check_again:
       print
@@ -471,11 +473,15 @@ class Engine():
     version1 = version.communicate()[0]
     if '--wps' not in version1:
       print
-      print ALERT + "Incorrect version of Aircrack."
-      print "    Please update the repositories and install"
-      print "    the newest version of Aircrack."
+      print ALERT + "Incorrect version of Aircrack on your repositories."
+      print "    Do you want to download source code and compile it?"
+      print "    (The program will try to compile it but the process may take a while)"
       print
-      self.exit_clean()
+      choice = raw_input(INPUT+"[Y/n] ")
+      if choice in CHOICES_YES:
+        c.get_binaries(compileAircrack = True)
+      else:
+        self.exit_clean()
       
     ###All good...
     engine.start()
@@ -700,7 +706,7 @@ class Config():
       f.writelines(data)
     print INFO + "All data were saved into %s" %OUTPUT_FILE
     
-  def get_binaries(self):
+  def get_binaries(self, compileAircrack = False):
     """
     Installs reaver, pixiewps and other stuff
     """
@@ -712,6 +718,25 @@ class Config():
       print "    can install all the required programs."
       print
       engine.exit_clean()
+
+    if compileAircrack:
+      system('mkdir pyxietmp')
+      chdir('pyxietmp')
+      print INFO + "Downloading source code..."
+      system('wget http://download.aircrack-ng.org/aircrack-ng-1.2-rc2.tar.gz')                               # Get source code
+      print INFO + "Decompressing..."
+      system('tar -xf aircrack-ng-1.2-rc2.tar.gz')                                                            # Decompress
+      chdir('aircrack-ng-1.2-rc2')
+      print INFO + "Installing dependencies..."
+      system('apt-get -y install pkg-config libnl-3-dev libnl-genl-3-dev')                                    # Dependencies
+      print INFO + "Compiling..."
+      system('make && make strip && make install')                                                            # Compile
+      print INFO + "Cleaning files..."
+      chdir('../../')
+      system('rm -r pyxietmp')                                          # Clean
+      print INFO + "Done!"
+      engine.check(check_again = True)                                                                        # Check
+
     git = 'apt-get -y install git'
     reaver_dep = 'apt-get -y install build-essential libpcap-dev sqlite3 libsqlite3-dev aircrack-ng'
     pixie_dep = 'sudo apt-get -y install libssl-dev'
