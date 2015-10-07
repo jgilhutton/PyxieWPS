@@ -22,7 +22,7 @@ AIRODUMP_TIME = 3    # Airodump spends this amount of time enumerating APs
 RSSI = -100          # RSSI
 CHANNEL = ''         # All
 REAVER_TIME = 6      # Time to get all the useful AP information with reaver
-CHOICES_YES = ['Y', 'y', '', 'yes', 'YES', 'Yeah.. whatever...', 'FUCK YEAH BABY!']
+CHOICES_YES = ['Y', 'y', '', 'yes', 'YES', 'Yeah.. whatever...']
 CHOICES_NOPE = ['N', 'n', 'no', 'No', 'Dude... I mean... NO! GTFO!'] # Tits or GTFO
 blacklist = [] # BSSID blacklist of failed attacks
 PROMPT_APS = False
@@ -112,7 +112,7 @@ def arg_parser():
 	PROMPT_APS = True
 	OVERRIDE = False
       else:
-	print ALERT + "Do you even mode bro?"
+	print ALERT + "Unknown mode %s." %mode
 	print "    Check available modes in the help."
 	help()
     elif arg == '-M' or arg == '--max-aps':
@@ -260,7 +260,7 @@ class Engine():
     if not c.check_iface(): # check_iface returns True if any previous wlan is found in monitor mode
       c.set_iface("UP")
     else:
-      print INFO + "Previous interface was found in NSA mode: %s" %c.IFACE_MON
+      print INFO + "Previous interface was found in monitor mode: %s" %c.IFACE_MON
       choice = raw_input("%sDo you wish to use this interface? [Y/n] " %INPUT)
       print
       if choice in CHOICES_YES:
@@ -357,6 +357,7 @@ class Engine():
   def parse_airodump(self, input):
     """
     Parses the airodump output
+    If you find some error in the program flow, check this function first.
     returns ESSIDs, WPSstatus, channel, bssid and RSSI
     """
 
@@ -444,6 +445,7 @@ class Engine():
     if self.REAVER and self.AIRMON and self.PIXIEWPS and check_again:
       print INFO + "All programs were installed!"
       raw_input("%sPress enter to continue" %INPUT)
+      print
       print INFO + "Starting the attack..."
     elif check_again:
       print
@@ -471,11 +473,15 @@ class Engine():
     version1 = version.communicate()[0]
     if '--wps' not in version1:
       print
-      print ALERT + "Incorrect version of Aircrack."
-      print "    Please update the repositories and install"
-      print "    the newest version of Aircrack."
+      print ALERT + "Incorrect version of Aircrack on your repositories."
+      print "    Do you want to download source code and compile it?"
+      print "    (The program will try to compile it but the process may take a while)"
       print
-      self.exit_clean()
+      choice = raw_input(INPUT+"[Y/n] ")
+      if choice in CHOICES_YES:
+        c.get_binaries(compileAircrack = True)
+      else:
+        self.exit_clean()
       
     ###All good...
     engine.start()
@@ -554,7 +560,7 @@ class Config():
   Configuration functions
   """
   
-  IFACE_MON = 'caca' # means 'shit' in spanish. This is part of the non-swearing version
+  IFACE_MON = 'caca' # means 'shit' in spanish
   IFACE = 'caca'
   IS_MON = False
 
@@ -701,7 +707,7 @@ class Config():
       f.writelines(data)
     print INFO + "All data were saved into %s" %OUTPUT_FILE
     
-  def get_binaries(self):
+  def get_binaries(self, compileAircrack = False):
     """
     Installs reaver, pixiewps and other stuff
     """
@@ -713,6 +719,25 @@ class Config():
       print "    can install all the required programs."
       print
       engine.exit_clean()
+
+    if compileAircrack:
+      system('mkdir pyxietmp')
+      chdir('pyxietmp')
+      print INFO + "Downloading source code..."
+      system('wget http://download.aircrack-ng.org/aircrack-ng-1.2-rc2.tar.gz')                               # Get source code
+      print INFO + "Decompressing..."
+      system('tar -xf aircrack-ng-1.2-rc2.tar.gz')                                                            # Decompress
+      chdir('aircrack-ng-1.2-rc2')
+      print INFO + "Installing dependencies..."
+      system('apt-get -y install pkg-config libnl-3-dev libnl-genl-3-dev')                                    # Dependencies
+      print INFO + "Compiling..."
+      system('make && make strip && make install')                                                            # Compile
+      print INFO + "Cleaning files..."
+      chdir('../../')
+      system('rm -r pyxietmp')                                            # Clean
+      print INFO + "Done!"
+      engine.check(check_again = True)                                                                        # Check
+
     git = 'apt-get -y install git'
     reaver_dep = 'apt-get -y install build-essential libpcap-dev sqlite3 libsqlite3-dev aircrack-ng'
     pixie_dep = 'sudo apt-get -y install libssl-dev'
@@ -785,6 +810,7 @@ class Attack():
     last = len(ap_list)-1
     
     if ap_list == []:
+      print
       print ALERT + "Nooooooope!"
       print
       if not FOREVER:
