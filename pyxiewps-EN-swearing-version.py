@@ -112,8 +112,9 @@ def arg_parser():
 	PROMPT_APS = True
 	OVERRIDE = False
       else:
-	print ALERT + "Unknown mode %s." %mode
+	print ALERT + "WTF does %s mean?" %mode
 	print "    Check available modes in the help."
+	print "    But I know you are a lazy fuck, so here's the help for you..."
 	help()
     elif arg == '-M' or arg == '--max-aps':
       try:
@@ -260,10 +261,12 @@ class Engine():
     if not c.check_iface(): # check_iface returns True if any previous wlan is found in monitor mode
       c.set_iface("UP")
     else:
-      print INFO + "Previous interface was found in monitor mode: %s" %c.IFACE_MON
+      print INFO + "Previous interface was found in NSA mode: %s" %c.IFACE_MON
       choice = raw_input("%sDo you wish to use this interface? [Y/n] " %INPUT)
       print
       if choice in CHOICES_YES:
+      	print INFO + "Good fucking choice..."
+      	print
 	pass
       elif choice in CHOICES_NOPE:
 	c.set_iface("DOWN")
@@ -426,32 +429,32 @@ class Engine():
 	print ALERT + "You need other version of reaver."
 	self.REAVER = False
     elif not check_again:
-      print ALERT + 'reaver is not installed'
+      print ALERT + 'reaver is not in da house.'
       self.REAVER = False
     if c.program_exists(PIXIEWPS):
       self.PIXIEWPS = True
     elif not check_again:
-      print ALERT + 'pixiewps is not installed'
+      print ALERT + 'pixiewps is not in da fucking hose'
       self.PIXIEWPS = False
     if c.program_exists(AIRMON):
       self.AIRMON = True
     elif not check_again:
-      print ALERT + 'airmon-ng is not installed'
+      print ALERT + 'airmon-ng is not in da motherfuckin house'
       self.AIRMON = False
     if c.program_exists(GIT):
       self.GIT = True
     elif not check_again:
       self.GIT = False
     if self.REAVER and self.AIRMON and self.PIXIEWPS and check_again:
-      print INFO + "All programs were installed!"
+      print INFO + "All programs are now in da house."
       raw_input("%sPress enter to continue" %INPUT)
       print
       print INFO + "Starting the attack..."
     elif check_again:
       print
-      print ALERT + "Some programs were not installed."
+      print ALERT + "SAaw... shit. Some programs were not installed."
       print "    manually check the needed dependencies"
-      print "    and run again the program after you installed them."
+      print "    and run again after you installed them."
       print
       exit()
     if not (self.REAVER and self.AIRMON and self.PIXIEWPS):
@@ -705,7 +708,7 @@ class Config():
       date = str(datetime.datetime.now())
       f.write(date+'\n')
       f.writelines(data)
-    print INFO + "All data were saved into %s" %OUTPUT_FILE
+    print INFO + "All data were saved into %s. NSA does the same thing with your mails." %OUTPUT_FILE
     
   def get_binaries(self, compileAircrack = False):
     """
@@ -714,7 +717,8 @@ class Config():
     
     if not self.internet_on():
       print
-      print ALERT + "You are not connected to the internet."
+      print ALERT + "How am I supposed to download something"
+      print "    when you are not connected to the internet?"
       print "    Please check your connection so that Pyxiewps"
       print "    can install all the required programs."
       print
@@ -866,7 +870,7 @@ class Attack():
 	      print INFO + "Will attack again as requested."
 	      print
 	    else:
-	      print INFO + "Skiped forever."
+	      print INFO + "Skiped forevaah."
 	      ap_list.remove(i) # Removed from the AP list
 	      blacklist.append(i[:17])
 	      print
