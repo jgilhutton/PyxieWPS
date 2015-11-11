@@ -1,6 +1,6 @@
 # pyxiewps overview
 
-Pyxiewps is a wireless attack tool written in python that uses reaver, pixiewps, macchanger and aircrack to retrieve the WPS pin of any vulnerable AP in seconds.
+Pyxiewps is a wireless attack tool written in python that uses reaver, pixiewps and aircrack to retrieve the WPS pin of any vulnerable AP in seconds.
 It's a wrapper.
 It is meant for educational purposes only. All credits for the research go to Dominique Bongard.
 
