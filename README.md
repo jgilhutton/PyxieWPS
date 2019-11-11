@@ -1,3 +1,5 @@
+# DISCLAMER: due to massive changes in debian distributions, including new Iproute2 and systemd, this script won't work anymore. In order fot it to work flawlessly, you'll need old net-tools installed in your system (ifconfig, arp, etc)
+
 # pyxiewps overview
 
 Pyxiewps is a wireless attack tool written in python that uses reaver, pixiewps and aircrack to retrieve the WPS pin of any vulnerable AP in seconds.
